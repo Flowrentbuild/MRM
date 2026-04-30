@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MRM Menuiserie — Vérificateur de bons de commande</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%231F3864'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='28' font-weight='bold' fill='white' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E" />
+
+  <style>
+    /* ============================================================
+       CHARTE GRAPHIQUE — MRM Menuiserie
+       À ajuster par Florent une fois les couleurs MRM officielles confirmées.
+       ============================================================ */
+    :root {
+      /* Charte officielle MRM Menuiserie (extraite de mrm31.fr) */
+      --mrm-primary:        #1F2D4D;   /* bleu marine profond — barre nav du site */
+      --mrm-primary-dark:   #131C30;   /* bleu nuit — hover/active */
+      --mrm-primary-light:  #E8ECF3;   /* bleu pâle — fonds secondaires */
+      --mrm-accent:         #A63131;   /* rouge bordeaux MRM — boutons CTA */
+      --mrm-accent-dark:    #872626;   /* rouge bordeaux foncé — hover CTA */
+      --mrm-accent-soft:    #F8E4E4;   /* rouge pâle — fonds */
+      --mrm-beige:          #C7A878;   /* beige sable — lettres logo */
+      --mrm-bg:             #F8F8F6;   /* fond général très doux */
+      --mrm-card:           #FFFFFF;   /* fond cartes / formulaires */
+      --mrm-text:           #2C2C2C;   /* texte principal */
+      --mrm-text-soft:      #5C6470;   /* texte secondaire */
+      --mrm-border:         #E1E5EA;   /* bordures discrètes */
+      --mrm-success:        #2E7D32;
+      --mrm-success-bg:     #E8F5E9;
+      --mrm-warning:        #EF6C00;
+      --mrm-warning-bg:     #FFF3E0;
+      --mrm-danger:         #C62828;
+      --mrm-danger-bg:      #FFEBEE;
+      --mrm-shadow:         0 2px 6px rgba(31, 45, 77, 0.06);
+      --mrm-shadow-hover:   0 6px 18px rgba(31, 45, 77, 0.10);
+      --mrm-radius:         10px;
+      --mrm-font:           system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    /* ============================================================
+       URLS DES WEBHOOKS n8n
+       ============================================================ */
+    /* Ces URLs sont aussi dans le JS plus bas. Si tu les changes, change les deux endroits. */
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--mrm-bg);
+      color: var(--mrm-text);
+      font-family: var(--mrm-font);
+      font-size: 16px;
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    /* ============================================================
+       Header
+       ============================================================ */
+    header.app-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 24px;
+      background: var(--mrm-primary);
+      color: #fff;
+      border-radius: var(--mrm-radius);
+      margin-bottom: 28px;
+      box-shadow: var(--mrm-shadow);
+    }
+    header.app-header .logo {
+      width: 90px;
+      height: 48px;
+      flex-shrink: 0;
+      display: block;
+    }
+    header.app-header .logo svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+    }
+    header.app-header h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+    }
+    header.app-header p {
+      margin: 2px 0 0;
+      opacity: 0.8;
+      font-size: 13px;
+    }
+
+    /* ============================================================
+       Toggle Single / Multi BDC
+       ============================================================ */
+    .mode-toggle {
+      display: flex;
+      background: var(--mrm-card);
+      border: 1px solid var(--mrm-border);
+      border-radius: var(--mrm-radius);
+      padding: 4px;
+      margin-bottom: 22px;
+      box-shadow: var(--mrm-shadow);
+    }
+    .mode-toggle button {
+      flex: 1;
+      padding: 12px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--mrm-text-soft);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .mode-toggle button.active {
+      background: var(--mrm-primary);
+      color: #fff;
+    }
+    .mode-toggle button:not(.active):hover {
+      background: var(--mrm-primary-light);
+      color: var(--mrm-primary);
+    }
+    .mode-toggle .desc {
+      display: block;
+      font-weight: 400;
+      font-size: 12px;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+
+    /* ============================================================
+       Form
+       ============================================================ */
+    form.bdc-form {
+      background: var(--mrm-card);
+      padding: 28px;
+      border-radius: var(--mrm-radius);
+      box-shadow: var(--mrm-shadow);
+      border: 1px solid var(--mrm-border);
+    }
+
+    .field {
+      margin-bottom: 22px;
+    }
+    .field:last-child { margin-bottom: 0; }
+
+    .field label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--mrm-primary);
+      margin-bottom: 6px;
+    }
+    .field label .req {
+      color: var(--mrm-accent);
+      margin-left: 4px;
+    }
+    .field .help {
+      font-size: 12px;
+      color: var(--mrm-text-soft);
+      margin: 0 0 8px;
+    }
+
+    /* Drop zones */
+    .dropzone {
+      position: relative;
+      border: 2px dashed var(--mrm-border);
+      border-radius: var(--mrm-radius);
+      padding: 22px;
+      text-align: center;
+      transition: all 0.15s ease;
+      background: var(--mrm-bg);
+      cursor: pointer;
+    }
+    .dropzone:hover {
+      border-color: var(--mrm-primary);
+      background: var(--mrm-primary-light);
+    }
+    .dropzone.dragover {
+      border-color: var(--mrm-accent);
+      background: var(--mrm-accent-soft);
+      transform: scale(1.01);
+    }
+    .dropzone .dz-icon {
+      font-size: 28px;
+      color: var(--mrm-text-soft);
+      margin-bottom: 6px;
+    }
+    .dropzone .dz-text {
+      font-size: 14px;
+      color: var(--mrm-text-soft);
+    }
+    .dropzone .dz-text strong {
+      color: var(--mrm-primary);
+    }
+    .dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .dropzone.has-files .dz-icon { color: var(--mrm-success); }
+    .dropzone.has-files .dz-text { color: var(--mrm-text); }
+    .file-list {
+      margin-top: 10px;
+      text-align: left;
+      position: relative;   /* passe au-dessus de l'input file absolute */
+      z-index: 2;           /* pour que les clics sur ✕ ne soient pas captés par l'input */
+    }
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: #fff;
+      border: 1px solid var(--mrm-border);
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .file-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-item .size { color: var(--mrm-text-soft); font-size: 11px; }
+    .file-item .remove {
+      cursor: pointer;
+      color: var(--mrm-danger);
+      background: none;
+      border: none;
+      font-size: 16px;
+      padding: 0 4px;
+    }
+
+    /* Inputs texte */
+    input[type="text"],
+    input[type="email"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid var(--mrm-border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--mrm-text);
+      background: #fff;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--mrm-primary);
+      box-shadow: 0 0 0 3px rgba(31, 56, 100, 0.08);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* Submit — bouton CTA aux couleurs MRM (rouge bordeaux) */
+    button.submit-btn {
+      width: 100%;
+      padding: 14px 20px;
+      background: var(--mrm-accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-top: 8px;
+    }
+    button.submit-btn:hover:not(:disabled) {
+      background: var(--mrm-accent-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(166, 49, 49, 0.25);
+    }
+    button.submit-btn:disabled {
+      background: var(--mrm-text-soft);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    /* Status / résultats */
+    .status {
+      margin-top: 22px;
+      padding: 18px 22px;
+      border-radius: var(--mrm-radius);
+      border-left: 5px solid;
+      font-size: 14px;
+      display: none;
+    }
+    .status.show { display: block; }
+    .status.loading {
+      background: var(--mrm-primary-light);
+      border-left-color: var(--mrm-primary);
+      color: var(--mrm-primary);
+    }
+    .status.success {
+      background: var(--mrm-success-bg);
+      border-left-color: var(--mrm-success);
+      color: var(--mrm-success);
+    }
+    .status.error {
+      background: var(--mrm-danger-bg);
+      border-left-color: var(--mrm-danger);
+      color: var(--mrm-danger);
+    }
+    .status strong { display: block; margin-bottom: 4px; font-size: 15px; }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer.app-footer {
+      text-align: center;
+      margin-top: 28px;
+      font-size: 12px;
+      color: var(--mrm-text-soft);
+    }
+    footer.app-footer a { color: var(--mrm-primary); text-decoration: none; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .container { padding: 16px 12px 40px; }
+      header.app-header { padding: 14px 16px; }
+      header.app-header h1 { font-size: 17px; }
+      form.bdc-form { padding: 18px; }
+      .mode-toggle button { padding: 10px 8px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header class="app-header">
+      <div class="logo" aria-label="Logo MRM Menuiserie Ruz Mickaël">
+        <!-- Logo MRM stylisé inline : carré rouge bordeaux + lettres MRM beige + bandeau noir tagline.
+             Tu peux remplacer ce SVG par <img src="logo-mrm.png" alt="MRM Menuiserie"> si tu as le logo officiel. -->
+        <svg viewBox="0 0 180 96" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+          <!-- Fond rouge bordeaux -->
+          <rect x="0" y="0" width="180" height="76" fill="#A63131" />
+          <!-- Texture grunge légère via lignes diagonales semi-transparentes -->
+          <rect x="0" y="0" width="180" height="76" fill="url(#noise)" />
+          <defs>
+            <pattern id="noise" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="6" stroke="#872626" stroke-width="0.4" opacity="0.35"/>
+            </pattern>
+          </defs>
+          <!-- Lettres MRM en beige sable, gras, condensé -->
+          <text x="90" y="56" font-family="'Impact', 'Arial Black', sans-serif" font-size="56" font-weight="900"
+                fill="#C7A878" text-anchor="middle" letter-spacing="-2">MRM</text>
+          <!-- Bandeau noir tagline -->
+          <rect x="0" y="76" width="180" height="20" fill="#0E0E0E" />
+          <text x="90" y="91" font-family="'Arial', sans-serif" font-size="11" font-weight="700"
+                fill="#FFFFFF" text-anchor="middle" letter-spacing="1">MENUISERIE RUZ MICKAËL</text>
+        </svg>
+      </div>
+      <div>
+        <h1>Vérificateur de bons de commande</h1>
+        <p>Contrôle automatique avant signature · Outil métier MRM Menuiserie</p>
+      </div>
+    </header>
+
+    <div class="mode-toggle" role="tablist">
+      <button type="button" class="mode-btn active" data-mode="single" role="tab" aria-selected="true">
+        Un seul BDC
+        <span class="desc">Contrôler le BDC d'un fournisseur unique</span>
+      </button>
+      <button type="button" class="mode-btn" data-mode="multi" role="tab" aria-selected="false">
+        Chantier multi-fournisseurs
+        <span class="desc">Plusieurs BDC d'un même chantier en une fois</span>
+      </button>
+    </div>
+
+    <form id="bdcForm" class="bdc-form" enctype="multipart/form-data">
+      <!-- 1. Devis commercial (+ fiche suivi client) — optionnel -->
+      <div class="field">
+        <label>Devis commercial signé par le client <span style="font-weight:400;color:var(--mrm-text-soft);">(+ fiche de suivi client si disponible)</span></label>
+        <p class="help">Sert à croiser les options, les références et le prix. Optionnel mais recommandé.</p>
+        <div class="dropzone" data-target="devisInput">
+          <div class="dz-icon">📋</div>
+          <div class="dz-text">
+            <strong>Glisse le devis ici</strong><br>
+            ou clique pour choisir un fichier
+          </div>
+          <input type="file" id="devisInput" name="devis" accept=".pdf,.png,.jpg,.jpeg,.webp" />
+          <div class="file-list" id="devisList"></div>
+        </div>
+      </div>
+
+      <!-- 2. Relevé métreur -->
+      <div class="field">
+        <label>Métré (relevé du métreur ou architecte)<span class="req">*</span></label>
+        <p class="help">PDF ou image. Pour un fichier Excel, convertis-le d'abord en PDF (Excel → Fichier → Exporter → PDF).</p>
+        <div class="dropzone" data-target="releveInput">
+          <div class="dz-icon">📐</div>
+          <div class="dz-text">
+            <strong>Glisse ton métré ici</strong><br>
+            ou clique pour choisir un fichier
+          </div>
+          <input type="file" id="releveInput" name="releve" accept=".pdf,.png,.jpg,.jpeg,.webp" />
+          <div class="file-list" id="releveList"></div>
+        </div>
+      </div>
+
+      <!-- 3. Commande MRM ou ARC fournisseur -->
+      <div class="field">
+        <label id="bdcLabel">Commande MRM ou ARC fournisseur<span class="req">*</span></label>
+        <p class="help" id="bdcHelp">Dépose soit la commande envoyée par MRM au fournisseur, soit l'accusé de réception (ARC) renvoyé par le fournisseur. C'est la pièce qui sera contrôlée avant signature.</p>
+        <div class="dropzone" data-target="bdcInput">
+          <div class="dz-icon">📑</div>
+          <div class="dz-text">
+            <strong id="bdcDz">Glisse la commande MRM ou l'ARC ici</strong><br>
+            ou clique pour choisir un fichier
+          </div>
+          <input type="file" id="bdcInput" name="bdc" accept=".pdf,.png,.jpg,.jpeg,.webp" />
+          <div class="file-list" id="bdcList"></div>
+        </div>
+      </div>
+
+      <!-- Fournisseur (uniquement single mode) -->
+      <div class="field" id="fournisseurField">
+        <label>Fournisseur<span class="req">*</span></label>
+        <select id="fournisseur" name="fournisseur">
+          <option value="">— Choisir le fournisseur —</option>
+          <option>OKNO (Oknoplast)</option>
+          <option>LAKAL</option>
+          <option>PROFILSTORE</option>
+          <option>GAVIOTA</option>
+          <option>VERALYS</option>
+          <option>EURADIF</option>
+          <option>SOTHOFERM</option>
+          <option>PREFAL</option>
+          <option>MILLET</option>
+          <option>Autre</option>
+        </select>
+      </div>
+
+      <!-- Email destinataire -->
+      <div class="field">
+        <label>Email destinataire du rapport<span class="req">*</span></label>
+        <input type="email" id="email" name="email" placeholder="mickael@mrm31.fr" required />
+      </div>
+
+      <!-- Référence chantier -->
+      <div class="field">
+        <label>Référence client / chantier (optionnel)</label>
+        <input type="text" id="reference" name="reference" placeholder="Ex : DUPONT Jean — chantier rénovation" />
+      </div>
+
+      <!-- Commentaire -->
+      <div class="field">
+        <label>Commentaire libre (optionnel)</label>
+        <textarea id="commentaire" name="commentaire" placeholder="Note pour mémoire ou pour préciser un contexte particulier"></textarea>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">
+        Lancer le contrôle
+      </button>
+
+      <div class="status" id="status"></div>
+    </form>
+
+    <footer class="app-footer">
+      Outil de contrôle développé par <a href="mailto:flowrent.build@gmail.com">Flowrent Build</a> pour MRM Menuiserie.<br>
+      Le rapport arrive par email en environ 30 à 60 secondes après envoi.
+    </footer>
+  </div>
+
+  <script>
+    // ============================================================
+    // CONFIGURATION : URLs des webhooks n8n
+    // ============================================================
+    const WEBHOOK_URLS = {
+      // Endpoints Webhook standalone (acceptent les POST externes de cette console)
+      // En interne, ils déclenchent les mêmes workflows que les Form Triggers natifs n8n.
+      single: "https://flowrentbuild.app.n8n.cloud/webhook/mrm-console-v1",
+      multi:  "https://flowrentbuild.app.n8n.cloud/webhook/mrm-console-v2"   // à créer côté V2 quand on basculera
+    };
+
+    // ============================================================
+    // État
+    // ============================================================
+    let currentMode = "single";    // "single" ou "multi"
+    const filesState = {
+      releve: null,                 // un seul fichier
+      bdc: [],                      // un ou plusieurs (selon mode)
+      devis: null
+    };
+
+    // ============================================================
+    // Toggle de mode
+    // ============================================================
+    document.querySelectorAll(".mode-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".mode-btn").forEach(b => {
+          b.classList.remove("active");
+          b.setAttribute("aria-selected", "false");
+        });
+        btn.classList.add("active");
+        btn.setAttribute("aria-selected", "true");
+        currentMode = btn.dataset.mode;
+        applyMode();
+      });
+    });
+
+    function applyMode() {
+      const bdcInput = document.getElementById("bdcInput");
+      const bdcLabel = document.getElementById("bdcLabel");
+      const bdcHelp  = document.getElementById("bdcHelp");
+      const bdcDz    = document.getElementById("bdcDz");
+      const fField   = document.getElementById("fournisseurField");
+      const fSelect  = document.getElementById("fournisseur");
+
+      if (currentMode === "multi") {
+        bdcInput.multiple = true;
+        bdcLabel.innerHTML = 'Commandes MRM ou ARC fournisseurs (1 ou plusieurs)<span class="req">*</span>';
+        bdcHelp.textContent = "Sélectionne toutes les commandes / ARC du chantier (Ctrl/Cmd + clic pour plusieurs). Le bot identifie chaque fournisseur.";
+        bdcDz.textContent = "Glisse les commandes / ARC ici";
+        fField.style.display = "none";
+        fSelect.required = false;
+      } else {
+        bdcInput.multiple = false;
+        bdcLabel.innerHTML = 'Commande MRM ou ARC fournisseur<span class="req">*</span>';
+        bdcHelp.textContent = "Dépose soit la commande envoyée par MRM au fournisseur, soit l'accusé de réception (ARC) renvoyé par le fournisseur. C'est la pièce qui sera contrôlée avant signature.";
+        bdcDz.textContent = "Glisse la commande MRM ou l'ARC ici";
+        fField.style.display = "block";
+        fSelect.required = true;
+      }
+      // Reset bdc state to avoid carry-over of multiple files when switching to single
+      filesState.bdc = [];
+      bdcInput.value = "";
+      renderFileList("bdc");
+    }
+
+    // ============================================================
+    // Drag & drop + sélection fichiers
+    // ============================================================
+    document.querySelectorAll(".dropzone").forEach(dz => {
+      const input = document.getElementById(dz.dataset.target);
+      ["dragenter", "dragover"].forEach(ev =>
+        dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add("dragover"); })
+      );
+      ["dragleave", "drop"].forEach(ev =>
+        dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove("dragover"); })
+      );
+      dz.addEventListener("drop", e => {
+        const dropped = Array.from(e.dataTransfer.files);
+        applyDroppedFiles(input.id, dropped);
+      });
+      input.addEventListener("change", () => {
+        applyDroppedFiles(input.id, Array.from(input.files));
+      });
+    });
+
+    function applyDroppedFiles(inputId, files) {
+      if (inputId === "releveInput") {
+        filesState.releve = files[0] || null;
+        renderFileList("releve");
+      } else if (inputId === "bdcInput") {
+        if (currentMode === "single") {
+          filesState.bdc = files.length ? [files[0]] : [];
+        } else {
+          filesState.bdc = files;
+        }
+        renderFileList("bdc");
+      } else if (inputId === "devisInput") {
+        filesState.devis = files[0] || null;
+        renderFileList("devis");
+      }
+    }
+
+    function renderFileList(key) {
+      const listElId = key + "List";
+      const dzEl = document.querySelector(`.dropzone[data-target="${key}Input"]`);
+      const listEl = document.getElementById(listElId);
+      const value = key === "bdc" ? filesState.bdc : (filesState[key] ? [filesState[key]] : []);
+      listEl.innerHTML = "";
+      if (!value.length) {
+        dzEl.classList.remove("has-files");
+        return;
+      }
+      dzEl.classList.add("has-files");
+      value.forEach((f, i) => {
+        const div = document.createElement("div");
+        div.className = "file-item";
+        div.innerHTML = `<span>📎</span><span class="name">${escapeHtml(f.name)}</span><span class="size">${formatSize(f.size)}</span><button type="button" class="remove" data-key="${key}" data-i="${i}">✕</button>`;
+        listEl.appendChild(div);
+      });
+      listEl.querySelectorAll(".remove").forEach(b =>
+        b.addEventListener("click", e => {
+          e.stopPropagation();
+          const k = b.dataset.key;
+          const i = parseInt(b.dataset.i, 10);
+          if (k === "bdc") filesState.bdc.splice(i, 1);
+          else filesState[k] = null;
+          // Reset native input value to allow re-selecting same file later
+          const input = document.getElementById(k + "Input");
+          if (input) input.value = "";
+          renderFileList(k);
+        })
+      );
+    }
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + " o";
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " ko";
+      return (bytes / 1024 / 1024).toFixed(1) + " Mo";
+    }
+
+    function escapeHtml(s) {
+      const div = document.createElement("div");
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    // ============================================================
+    // Validation & soumission
+    // ============================================================
+    const form = document.getElementById("bdcForm");
+    const status = document.getElementById("status");
+    const submitBtn = document.getElementById("submitBtn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      status.classList.remove("show", "success", "error", "loading");
+
+      // Validation
+      if (!filesState.releve) {
+        showStatus("error", "Le relevé du métreur est obligatoire.");
+        return;
+      }
+      if (!filesState.bdc.length) {
+        showStatus("error", "Au moins un BDC fournisseur est requis.");
+        return;
+      }
+      const email = document.getElementById("email").value.trim();
+      if (!email) {
+        showStatus("error", "L'email destinataire est obligatoire.");
+        return;
+      }
+      if (currentMode === "single" && !document.getElementById("fournisseur").value) {
+        showStatus("error", "Sélectionne le fournisseur.");
+        return;
+      }
+
+      // Construction du FormData
+      // 1) Avec les noms EXACTS des champs n8n (pour la compatibilité form trigger natif)
+      // 2) AUSSI avec des noms ASCII pure en doublon (fallback : n8n form trigger met parfois
+      //    null sur les valeurs texte si le POST externe n'a pas les marqueurs natifs.
+      //    Les noms ASCII passent dans $json et sont récupérés par getField() côté workflow).
+      const fd = new FormData();
+      const supplier = currentMode === "single" ? document.getElementById("fournisseur").value : "";
+      const ref = document.getElementById("reference").value.trim();
+      const com = document.getElementById("commentaire").value.trim();
+
+      if (currentMode === "single") {
+        fd.append("Relevé de mesures du métreur ou architecte", filesState.releve, filesState.releve.name);
+        fd.append("Bon de commande fournisseur (à contrôler)", filesState.bdc[0], filesState.bdc[0].name);
+        if (filesState.devis) fd.append("Devis commercial signé par le client (optionnel)", filesState.devis, filesState.devis.name);
+        fd.append("Fournisseur", supplier);
+      } else {
+        fd.append("Relevé de mesures du métreur ou architecte", filesState.releve, filesState.releve.name);
+        filesState.bdc.forEach(f => {
+          fd.append("Bons de commande fournisseurs (1 ou plusieurs PDF)", f, f.name);
+        });
+        if (filesState.devis) fd.append("Devis commercial signé par le client (optionnel)", filesState.devis, filesState.devis.name);
+      }
+      fd.append("Email destinataire du rapport", email);
+      if (ref) fd.append("Référence client / chantier (optionnel)", ref);
+      if (com) fd.append("Commentaire libre (optionnel)", com);
+
+      // Fallback ASCII pure (passent toujours côté n8n même si le form trigger filtre les labels)
+      fd.append("email", email);
+      if (supplier) fd.append("fournisseur", supplier);
+      if (ref) fd.append("reference", ref);
+      if (com) fd.append("commentaire", com);
+
+      // Envoi
+      submitBtn.disabled = true;
+      showStatus("loading", "Envoi en cours… Le rapport arrivera par email dans 30 à 60 secondes.");
+
+      try {
+        const url = WEBHOOK_URLS[currentMode];
+        const resp = await fetch(url, { method: "POST", body: fd });
+        if (!resp.ok) {
+          const txt = await resp.text();
+          throw new Error("HTTP " + resp.status + " : " + txt.slice(0, 300));
+        }
+        showStatus("success",
+          "Pièces reçues. Tu recevras le rapport sur " + email +
+          " dans environ 30 à 60 secondes. Tu peux fermer cette fenêtre ou contrôler un autre dossier."
+        );
+        form.reset();
+        filesState.releve = null;
+        filesState.bdc = [];
+        filesState.devis = null;
+        ["releve", "bdc", "devis"].forEach(renderFileList);
+      } catch (err) {
+        showStatus("error", "Erreur d'envoi : " + (err.message || err));
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    function showStatus(type, message) {
+      status.classList.remove("loading", "success", "error");
+      status.classList.add("show", type);
+      const prefix =
+        type === "loading" ? '<span class="spinner"></span><strong>Envoi en cours</strong>' :
+        type === "success" ? '<strong>✅ Envoi réussi</strong>' :
+                              '<strong>⛔ Erreur</strong>';
+      status.innerHTML = prefix + "<div>" + escapeHtml(message) + "</div>";
+    }
+
+    // Init
+    applyMode();
+  </script>
+</body>
+</html>
