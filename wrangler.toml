@@ -1,0 +1,9 @@
+# Configuration du Worker mrm-verificateur (Static Assets only)
+# Sert les fichiers du dossier ./public en mode site statique.
+
+name = "mrm-verificateur"
+compatibility_date = "2026-04-28"
+
+[assets]
+directory = "./public"
+not_found_handling = "single-page-application"
