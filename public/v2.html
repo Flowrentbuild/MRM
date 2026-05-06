@@ -379,8 +379,8 @@
         </svg>
       </div>
       <div>
-        <h1>Vérificateur de bons de commande <span style="font-size: 0.55em; background: #1F2D4D; color: white; padding: 4px 10px; border-radius: 4px; vertical-align: middle; margin-left: 8px; font-weight: 500;">V3 — TEST</span></h1>
-        <p>Architecture fiabilisée · Comparaison déterministe · Triple contrôle IA</p>
+        <h1>Vérificateur de bons de commande</h1>
+        <p>Contrôle automatique avant signature · Outil métier MRM Menuiserie</p>
       </div>
     </header>
 
@@ -455,32 +455,8 @@
           <option>SOTHOFERM</option>
           <option>PREFAL</option>
           <option>MILLET</option>
-          <option>SOMALU</option>
-          <option>BEL'M</option>
           <option>Autre</option>
         </select>
-      </div>
-
-      <!-- NOUVEAU V3 : Prix d'achat fournisseur (mode single uniquement) -->
-      <div class="field" id="prixAchatSingleField">
-        <label>Prix d'achat HT du fournisseur <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — pour calcul du gain)</span></label>
-        <p class="help">Saisissez le prix HT facturé par le fournisseur. Permet d'afficher le gain estimé par rapport au devis dans le rapport final.</p>
-        <input type="number" id="prixAchat" name="prix_achat_fournisseur" min="0" step="0.01" placeholder="Ex : 1100" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px;" />
-      </div>
-
-      <!-- NOUVEAU V3 : Matrice prix d'achat par BDC (mode multi uniquement) -->
-      <div class="field" id="prixParBdcField" style="display: none;">
-        <label>Prix d'achat HT par BDC <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — détail du gain par fournisseur)</span></label>
-        <p class="help">Pour chaque bon de commande déposé, indiquez le fournisseur et le prix d'achat HT. Le rapport affichera le gain par fournisseur et le total chantier.</p>
-        <div id="prixParBdcList"></div>
-        <p id="prixParBdcEmpty" style="font-style: italic; color: #999; margin-top: 8px; font-size: 14px;">Déposez d'abord les BDC ci-dessus pour saisir leurs prix.</p>
-      </div>
-
-      <!-- NOUVEAU V3 : Prix devis total HT -->
-      <div class="field">
-        <label>Prix devis total HT <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — pour calcul du gain)</span></label>
-        <p class="help">Total HT du devis client signé. Avec le prix d'achat ci-dessus, le rapport calcule automatiquement le gain commercial.</p>
-        <input type="number" id="prixDevis" name="prix_devis_total" min="0" step="0.01" placeholder="Ex : 1500" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px;" />
       </div>
 
       <!-- Email destinataire -->
@@ -519,9 +495,10 @@
     // CONFIGURATION : URLs des webhooks n8n
     // ============================================================
     const WEBHOOK_URLS = {
-      // V3 : un seul webhook qui gère mono et multi-BDC (l'étage A détecte automatiquement)
-      single: "https://flowrentbuild.app.n8n.cloud/webhook/mrm-console-v3",
-      multi:  "https://flowrentbuild.app.n8n.cloud/webhook/mrm-console-v3"
+      // Endpoints Webhook standalone (acceptent les POST externes de cette console)
+      // En interne, ils déclenchent les mêmes workflows que les Form Triggers natifs n8n.
+      single: "https://flowrentbuild.app.n8n.cloud/webhook/mrm-console-v1",
+      multi:  "https://flowrentbuild.app.n8n.cloud/webhook/mrm-console-v2"   // à créer côté V2 quand on basculera
     };
 
     // ============================================================
@@ -565,9 +542,6 @@
         bdcDz.textContent = "Glisse les commandes / ARC ici";
         fField.style.display = "none";
         fSelect.required = false;
-        // Mode multi : matrice prix par BDC visible, single field caché
-        document.getElementById("prixAchatSingleField").style.display = "none";
-        document.getElementById("prixParBdcField").style.display = "block";
       } else {
         bdcInput.multiple = false;
         bdcLabel.innerHTML = 'Commande MRM ou ARC fournisseur<span class="req">*</span>';
@@ -575,61 +549,11 @@
         bdcDz.textContent = "Glisse la commande MRM ou l'ARC ici";
         fField.style.display = "block";
         fSelect.required = true;
-        // Mode single : champ prix unique visible, matrice cachée
-        document.getElementById("prixAchatSingleField").style.display = "block";
-        document.getElementById("prixParBdcField").style.display = "none";
       }
       // Reset bdc state to avoid carry-over of multiple files when switching to single
       filesState.bdc = [];
       bdcInput.value = "";
       renderFileList("bdc");
-      renderPrixParBdc();
-    }
-
-    // ============================================================
-    // NOUVEAU V3 : Liste fournisseurs + matrice prix par BDC (mode multi)
-    // ============================================================
-    const FOURNISSEURS_LIST = ["OKNO (Oknoplast)", "LAKAL", "PROFILSTORE", "GAVIOTA", "VERALYS", "EURADIF", "SOTHOFERM", "PREFAL", "MILLET", "SOMALU", "BEL'M", "Autre"];
-
-    function renderPrixParBdc() {
-      const list = document.getElementById("prixParBdcList");
-      const empty = document.getElementById("prixParBdcEmpty");
-      if (!list) return;
-      // Préserver les valeurs déjà saisies avant régénération
-      const existing = {};
-      list.querySelectorAll("[data-bdc-i]").forEach(row => {
-        const i = row.getAttribute("data-bdc-i");
-        existing[i] = {
-          fournisseur: row.querySelector("select").value,
-          prix: row.querySelector("input").value
-        };
-      });
-      list.innerHTML = "";
-      if (currentMode !== "multi" || !filesState.bdc.length) {
-        if (empty) empty.style.display = currentMode === "multi" ? "block" : "none";
-        return;
-      }
-      if (empty) empty.style.display = "none";
-      const opts = FOURNISSEURS_LIST.map(f => `<option value="${f}">${f}</option>`).join("");
-      filesState.bdc.forEach((f, i) => {
-        const row = document.createElement("div");
-        row.setAttribute("data-bdc-i", i);
-        row.style.cssText = "display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap;padding:8px;background:#f9f9f9;border-radius:6px;";
-        const prevF = existing[i] ? existing[i].fournisseur : "";
-        const prevP = existing[i] ? existing[i].prix : "";
-        const truncName = f.name.length > 32 ? f.name.slice(0, 32) + "…" : f.name;
-        row.innerHTML = `
-          <span style="flex:1;min-width:180px;font-size:13px;color:#444;" title="${escapeHtml(f.name)}">📎 ${escapeHtml(truncName)}</span>
-          <select style="flex:1;min-width:140px;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;">
-            <option value="">— Fournisseur —</option>
-            ${opts}
-          </select>
-          <input type="number" min="0" step="0.01" placeholder="Prix HT €" style="width:130px;padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px;" />
-        `;
-        list.appendChild(row);
-        if (prevF) row.querySelector("select").value = prevF;
-        if (prevP) row.querySelector("input").value = prevP;
-      });
     }
 
     // ============================================================
@@ -677,7 +601,6 @@
       listEl.innerHTML = "";
       if (!value.length) {
         dzEl.classList.remove("has-files");
-        if (key === "bdc") renderPrixParBdc();
         return;
       }
       dzEl.classList.add("has-files");
@@ -700,7 +623,6 @@
           renderFileList(k);
         })
       );
-      if (key === "bdc") renderPrixParBdc();
     }
 
     function formatSize(bytes) {
@@ -776,32 +698,6 @@
       if (supplier) fd.append("fournisseur", supplier);
       if (ref) fd.append("reference", ref);
       if (com) fd.append("commentaire", com);
-
-      // NOUVEAU V3 : prix devis (toujours, single+multi)
-      const prixDevis = document.getElementById("prixDevis").value.trim();
-      if (prixDevis) {
-        fd.append("Prix devis total HT (optionnel)", prixDevis);
-        fd.append("prix_devis_total", prixDevis);
-      }
-
-      if (currentMode === "single") {
-        // Single : un seul prix d'achat
-        const prixAchat = document.getElementById("prixAchat").value.trim();
-        if (prixAchat) {
-          fd.append("Prix d'achat HT du fournisseur (optionnel)", prixAchat);
-          fd.append("prix_achat_fournisseur", prixAchat);
-        }
-      } else {
-        // Multi : une row par BDC avec fournisseur + prix
-        const rows = document.querySelectorAll("#prixParBdcList [data-bdc-i]");
-        rows.forEach((row) => {
-          const i = row.getAttribute("data-bdc-i");
-          const fourn = row.querySelector("select").value.trim();
-          const prix = row.querySelector("input").value.trim();
-          if (fourn) fd.append(`bdc_${i}_fournisseur`, fourn);
-          if (prix) fd.append(`bdc_${i}_prix`, prix);
-        });
-      }
 
       // Envoi
       submitBtn.disabled = true;
