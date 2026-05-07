@@ -525,13 +525,6 @@
         <p id="prixParBdcEmpty" style="font-style: italic; color: #999; margin-top: 8px; font-size: 14px;">Déposez d'abord les BDC ci-dessus pour saisir leurs prix.</p>
       </div>
 
-      <!-- NOUVEAU V3 : Prix devis total HT -->
-      <div class="field">
-        <label>Prix devis total HT <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — pour calcul du gain)</span></label>
-        <p class="help">Total HT du devis client signé. Avec le prix d'achat ci-dessus, le rapport calcule automatiquement le gain commercial.</p>
-        <input type="number" id="prixDevis" name="prix_devis_total" min="0" step="0.01" placeholder="Ex : 1500" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px;" />
-      </div>
-
       <!-- Email destinataire -->
       <div class="field">
         <label>Email destinataire du rapport<span class="req">*</span></label>
@@ -879,13 +872,6 @@
       if (supplier) fd.append("fournisseur", supplier);
       if (ref) fd.append("reference", ref);
       if (com) fd.append("commentaire", com);
-
-      // NOUVEAU V3 : prix devis (toujours, single+multi)
-      const prixDevis = document.getElementById("prixDevis").value.trim();
-      if (prixDevis) {
-        fd.append("Prix devis total HT (optionnel)", prixDevis);
-        fd.append("prix_devis_total", prixDevis);
-      }
 
       if (currentMode === "single") {
         // Single : un seul prix d'achat
