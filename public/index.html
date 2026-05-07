@@ -384,17 +384,6 @@
       </div>
     </header>
 
-    <div class="mode-toggle" role="tablist">
-      <button type="button" class="mode-btn active" data-mode="single" role="tab" aria-selected="true">
-        Un seul BDC
-        <span class="desc">Contrôler le BDC d'un fournisseur unique</span>
-      </button>
-      <button type="button" class="mode-btn" data-mode="multi" role="tab" aria-selected="false">
-        Chantier multi-fournisseurs
-        <span class="desc">Plusieurs BDC d'un même chantier en une fois</span>
-      </button>
-    </div>
-
     <form id="bdcForm" class="bdc-form" enctype="multipart/form-data">
       <!-- 1. Devis commercial (+ fiche suivi client) — optionnel -->
       <div class="field">
@@ -426,103 +415,42 @@
         </div>
       </div>
 
-      <!-- 3a. Bon de commande envoyé (commande MRM → fournisseur) -->
+      <!-- 3a. Bons de commande envoyés (commandes MRM → fournisseurs) -->
       <div class="field">
-        <label id="bdcLabel">Bon de commande envoyé au fournisseur<span class="req">*</span></label>
-        <p class="help" id="bdcHelp">Dépose la (ou les) commande(s) envoyée(s) par MRM au fournisseur. C'est la pièce qui doit être contrôlée avant signature.</p>
+        <label>Bons de commande envoyés aux fournisseurs (1 ou plusieurs)<span class="req">*</span></label>
+        <p class="help">Dépose la (ou les) commande(s) envoyée(s) par MRM au(x) fournisseur(s). Sélection multiple : Ctrl/Cmd + clic.</p>
         <div class="dropzone" data-target="bdcInput">
           <div class="dz-icon">📑</div>
           <div class="dz-text">
-            <strong id="bdcDz">Glisse la commande MRM ici</strong><br>
-            ou clique pour choisir un fichier
+            <strong>Glisse les commandes MRM ici</strong><br>
+            ou clique pour choisir des fichiers
           </div>
-          <input type="file" id="bdcInput" name="bdc" accept=".pdf,.png,.jpg,.jpeg,.webp" />
+          <input type="file" id="bdcInput" name="bdc" multiple accept=".pdf,.png,.jpg,.jpeg,.webp" />
           <div class="file-list" id="bdcList"></div>
         </div>
       </div>
 
-      <!-- 3b. Accusé de réception (ARC) — optionnel mais recommandé -->
+      <!-- 3b. Accusés de réception (ARC) — optionnels mais recommandés -->
       <div class="field">
-        <label id="arcLabel">Accusé de réception fournisseur (ARC) <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — recommandé pour calcul du gain réel)</span></label>
-        <p class="help" id="arcHelp">Dépose l'ARC renvoyé par le fournisseur. Le bot extrait le montant HT validé pour calculer le gain réel par fournisseur (vs prix d'achat estimé).</p>
+        <label>Accusés de réception fournisseurs (ARC) <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — recommandé pour calcul du gain réel)</span></label>
+        <p class="help">Dépose le(s) ARC renvoyé(s) par le(s) fournisseur(s). Le bot extrait le montant HT validé pour calculer le gain réel par fournisseur (vs prix d'achat estimé).</p>
         <div class="dropzone" data-target="arcInput">
           <div class="dz-icon">✅</div>
           <div class="dz-text">
-            <strong id="arcDz">Glisse l'ARC fournisseur ici</strong><br>
-            ou clique pour choisir un fichier
+            <strong>Glisse les ARC fournisseurs ici</strong><br>
+            ou clique pour choisir des fichiers
           </div>
-          <input type="file" id="arcInput" name="arc" accept=".pdf,.png,.jpg,.jpeg,.webp" />
+          <input type="file" id="arcInput" name="arc" multiple accept=".pdf,.png,.jpg,.jpeg,.webp" />
           <div class="file-list" id="arcList"></div>
         </div>
       </div>
 
-      <!-- Fournisseur (uniquement single mode) -->
-      <div class="field" id="fournisseurField">
-        <label>Fournisseur<span class="req">*</span></label>
-        <select id="fournisseur" name="fournisseur">
-          <option value="">— Choisir le fournisseur —</option>
-          <optgroup label="Fenêtres / Portes alu &amp; PVC">
-            <option>OKNOPLAST</option>
-            <option>PREFAL</option>
-            <option>NEO BAIE</option>
-            <option>ALTECH</option>
-            <option>SOMALU</option>
-            <option>ALUHAUS</option>
-            <option>SUNFLEX</option>
-          </optgroup>
-          <optgroup label="Fenêtres bois">
-            <option>LEUL</option>
-          </optgroup>
-          <optgroup label="Portes d'entrée">
-            <option>ATULAM</option>
-            <option>EURADIF</option>
-          </optgroup>
-          <optgroup label="Volets roulants / BSO / Porte garage">
-            <option>LAKAL</option>
-            <option>BUBBENDORF</option>
-            <option>LOUBAT</option>
-            <option>FAME</option>
-            <option>DICOMA</option>
-          </optgroup>
-          <optgroup label="Volets battants">
-            <option>SOTHOFERM</option>
-            <option>EHRET</option>
-          </optgroup>
-          <optgroup label="Portails / Clôtures">
-            <option>CADIOU</option>
-            <option>FERPLAY</option>
-          </optgroup>
-          <optgroup label="Pergolas / Carports">
-            <option>HEOLIAN</option>
-            <option>ELEANCE</option>
-            <option>VERALYS</option>
-            <option>LI-SU DES TEMPS</option>
-            <option>GAVIOTA</option>
-          </optgroup>
-          <optgroup label="Stores extérieurs / Moustiquaires">
-            <option>FRANCIAFLEX</option>
-            <option>PROFIL STORE</option>
-          </optgroup>
-          <optgroup label="Motorisation / Domotique">
-            <option>SOMFY</option>
-          </optgroup>
-          <option>Autre</option>
-        </select>
-      </div>
-
-      <!-- NOUVEAU V3 : Prix d'achat fournisseur (mode single uniquement) -->
-      <div class="field" id="prixAchatSingleField">
-        <label>Prix d'achat HT du fournisseur <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — pour calcul du gain)</span></label>
-        <p class="help">Saisissez le prix HT facturé par le fournisseur. Permet d'afficher le gain estimé par rapport au devis dans le rapport final.</p>
-        <input type="number" id="prixAchat" name="prix_achat_fournisseur" min="0" step="0.01" placeholder="Ex : 1100" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px;" />
-      </div>
-
-      <!-- NOUVEAU V3 : Matrice prix d'achat par BDC (mode multi uniquement) -->
-      <div class="field" id="prixParBdcField" style="display: none;">
-        <label>Prix d'achat HT par BDC <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — détail du gain par fournisseur)</span></label>
-        <p class="help">Pour chaque bon de commande déposé, indiquez le fournisseur et le prix d'achat HT. Le rapport affichera le gain par fournisseur et le total chantier.</p>
+      <!-- Matrice prix d'achat par BDC -->
+      <div class="field">
+        <label>Prix d'achat HT estimé par BDC <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — détail du gain par fournisseur)</span></label>
+        <p class="help">Pour chaque bon de commande déposé, indique le fournisseur et le prix d'achat HT estimé. Le rapport affichera le gain par fournisseur et le total chantier.</p>
         <div id="prixParBdcList"></div>
-        <p id="prixParBdcEmpty" style="font-style: italic; color: #999; margin-top: 8px; font-size: 14px;">Déposez d'abord les BDC ci-dessus pour saisir leurs prix.</p>
+        <p id="prixParBdcEmpty" style="font-style: italic; color: #999; margin-top: 8px; font-size: 14px;">Dépose d'abord les BDC ci-dessus pour saisir leurs prix.</p>
       </div>
 
       <!-- Email destinataire -->
@@ -546,91 +474,21 @@
 
   <script>
     // ============================================================
-    // CONFIGURATION : URLs des webhooks n8n
+    // CONFIGURATION : URL du webhook n8n
     // ============================================================
-    const WEBHOOK_URLS = {
-      // V3 : un seul webhook qui gère mono et multi-BDC (l'étage A détecte automatiquement)
-      single: "https://flowrentbuild.app.n8n.cloud/webhook/mrm-console-v3",
-      multi:  "https://flowrentbuild.app.n8n.cloud/webhook/mrm-console-v3"
-    };
+    const WEBHOOK_URL = "https://flowrentbuild.app.n8n.cloud/webhook/mrm-console-v3";
 
     // ============================================================
     // État
     // ============================================================
-    let currentMode = "single";    // "single" ou "multi"
     const filesState = {
       releve: null,                 // un seul fichier
-      bdc: [],                      // BDC commandes envoyées par MRM (un ou plusieurs selon mode)
-      arc: [],                      // V3.8 : ARC reçus du fournisseur (0, 1 ou plusieurs selon mode)
+      bdc: [],                      // BDC commandes envoyées par MRM (1 ou plusieurs)
+      arc: [],                      // ARC reçus du fournisseur (0, 1 ou plusieurs)
       devis: null
     };
 
-    // ============================================================
-    // Toggle de mode
-    // ============================================================
-    document.querySelectorAll(".mode-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".mode-btn").forEach(b => {
-          b.classList.remove("active");
-          b.setAttribute("aria-selected", "false");
-        });
-        btn.classList.add("active");
-        btn.setAttribute("aria-selected", "true");
-        currentMode = btn.dataset.mode;
-        applyMode();
-      });
-    });
-
-    function applyMode() {
-      const bdcInput = document.getElementById("bdcInput");
-      const bdcLabel = document.getElementById("bdcLabel");
-      const bdcHelp  = document.getElementById("bdcHelp");
-      const bdcDz    = document.getElementById("bdcDz");
-      const arcInput = document.getElementById("arcInput");
-      const arcLabel = document.getElementById("arcLabel");
-      const arcHelp  = document.getElementById("arcHelp");
-      const arcDz    = document.getElementById("arcDz");
-      const fField   = document.getElementById("fournisseurField");
-      const fSelect  = document.getElementById("fournisseur");
-
-      if (currentMode === "multi") {
-        bdcInput.multiple = true;
-        bdcLabel.innerHTML = 'Bons de commande envoyés aux fournisseurs (1 ou plusieurs)<span class="req">*</span>';
-        bdcHelp.textContent = "Sélectionne toutes les commandes envoyées aux fournisseurs (Ctrl/Cmd + clic pour plusieurs).";
-        bdcDz.textContent = "Glisse les commandes MRM ici";
-        arcInput.multiple = true;
-        arcLabel.innerHTML = 'Accusés de réception fournisseurs (ARC) <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — recommandé pour calcul du gain réel)</span>';
-        arcHelp.textContent = "Sélectionne tous les ARC reçus des fournisseurs. Le bot extrait le montant HT validé pour calculer le gain réel par fournisseur.";
-        arcDz.textContent = "Glisse les ARC fournisseurs ici";
-        fField.style.display = "none";
-        fSelect.required = false;
-        // Mode multi : matrice prix par BDC visible, single field caché
-        document.getElementById("prixAchatSingleField").style.display = "none";
-        document.getElementById("prixParBdcField").style.display = "block";
-      } else {
-        bdcInput.multiple = false;
-        bdcLabel.innerHTML = 'Bon de commande envoyé au fournisseur<span class="req">*</span>';
-        bdcHelp.textContent = "Dépose la commande envoyée par MRM au fournisseur. C'est la pièce qui doit être contrôlée avant signature.";
-        bdcDz.textContent = "Glisse la commande MRM ici";
-        arcInput.multiple = false;
-        arcLabel.innerHTML = 'Accusé de réception fournisseur (ARC) <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — recommandé pour calcul du gain réel)</span>';
-        arcHelp.textContent = "Dépose l'ARC renvoyé par le fournisseur. Le bot extrait le montant HT validé pour calculer le gain réel par fournisseur (vs prix d'achat estimé).";
-        arcDz.textContent = "Glisse l'ARC fournisseur ici";
-        fField.style.display = "block";
-        fSelect.required = true;
-        // Mode single : champ prix unique visible, matrice cachée
-        document.getElementById("prixAchatSingleField").style.display = "block";
-        document.getElementById("prixParBdcField").style.display = "none";
-      }
-      // Reset bdc/arc state to avoid carry-over of multiple files when switching to single
-      filesState.bdc = [];
-      filesState.arc = [];
-      bdcInput.value = "";
-      arcInput.value = "";
-      renderFileList("bdc");
-      renderFileList("arc");
-      renderPrixParBdc();
-    }
+    // (Toggle mode supprimé — la console gère désormais 1+ BDC/ARC en flux unique.)
 
     // ============================================================
     // NOUVEAU V3 : Liste fournisseurs + matrice prix par BDC (mode multi)
@@ -673,8 +531,8 @@
         };
       });
       list.innerHTML = "";
-      if (currentMode !== "multi" || !filesState.bdc.length) {
-        if (empty) empty.style.display = currentMode === "multi" ? "block" : "none";
+      if (!filesState.bdc.length) {
+        if (empty) empty.style.display = "block";
         return;
       }
       if (empty) empty.style.display = "none";
@@ -725,18 +583,10 @@
         filesState.releve = files[0] || null;
         renderFileList("releve");
       } else if (inputId === "bdcInput") {
-        if (currentMode === "single") {
-          filesState.bdc = files.length ? [files[0]] : [];
-        } else {
-          filesState.bdc = files;
-        }
+        filesState.bdc = Array.from(files);
         renderFileList("bdc");
       } else if (inputId === "arcInput") {
-        if (currentMode === "single") {
-          filesState.arc = files.length ? [files[0]] : [];
-        } else {
-          filesState.arc = files;
-        }
+        filesState.arc = Array.from(files);
         renderFileList("arc");
       } else if (inputId === "devisInput") {
         filesState.devis = files[0] || null;
@@ -818,69 +668,37 @@
         showStatus("error", "L'email destinataire est obligatoire.");
         return;
       }
-      if (currentMode === "single" && !document.getElementById("fournisseur").value) {
-        showStatus("error", "Sélectionne le fournisseur.");
-        return;
-      }
 
-      // Construction du FormData
-      // 1) Avec les noms EXACTS des champs n8n (pour la compatibilité form trigger natif)
-      // 2) AUSSI avec des noms ASCII pure en doublon (fallback : n8n form trigger met parfois
-      //    null sur les valeurs texte si le POST externe n'a pas les marqueurs natifs.
-      //    Les noms ASCII passent dans $json et sont récupérés par getField() côté workflow).
+      // Construction du FormData (un seul format, le moteur n8n absorbe via getField tolérant)
       const fd = new FormData();
-      const supplier = currentMode === "single" ? document.getElementById("fournisseur").value : "";
-
-      if (currentMode === "single") {
-        fd.append("Relevé de mesures du métreur ou architecte", filesState.releve, filesState.releve.name);
-        fd.append("Bon de commande fournisseur (à contrôler)", filesState.bdc[0], filesState.bdc[0].name);
-        if (filesState.arc.length) {
-          fd.append("Accusé de réception fournisseur (ARC)", filesState.arc[0], filesState.arc[0].name);
-        }
-        if (filesState.devis) fd.append("Devis commercial signé par le client (optionnel)", filesState.devis, filesState.devis.name);
-        fd.append("Fournisseur", supplier);
-      } else {
-        fd.append("Relevé de mesures du métreur ou architecte", filesState.releve, filesState.releve.name);
-        filesState.bdc.forEach(f => {
-          fd.append("Bons de commande fournisseurs (1 ou plusieurs PDF)", f, f.name);
-        });
-        filesState.arc.forEach(f => {
-          fd.append("Accusés de réception fournisseurs (ARC, 1 ou plusieurs PDF)", f, f.name);
-        });
-        if (filesState.devis) fd.append("Devis commercial signé par le client (optionnel)", filesState.devis, filesState.devis.name);
-      }
+      fd.append("Relevé de mesures du métreur ou architecte", filesState.releve, filesState.releve.name);
+      filesState.bdc.forEach(f => {
+        fd.append("Bons de commande fournisseurs (1 ou plusieurs PDF)", f, f.name);
+      });
+      filesState.arc.forEach(f => {
+        fd.append("Accusés de réception fournisseurs (ARC, 1 ou plusieurs PDF)", f, f.name);
+      });
+      if (filesState.devis) fd.append("Devis commercial signé par le client (optionnel)", filesState.devis, filesState.devis.name);
       fd.append("Email destinataire du rapport", email);
-
       // Fallback ASCII pure (passent toujours côté n8n même si le form trigger filtre les labels)
       fd.append("email", email);
-      if (supplier) fd.append("fournisseur", supplier);
 
-      if (currentMode === "single") {
-        // Single : un seul prix d'achat
-        const prixAchat = document.getElementById("prixAchat").value.trim();
-        if (prixAchat) {
-          fd.append("Prix d'achat HT du fournisseur (optionnel)", prixAchat);
-          fd.append("prix_achat_fournisseur", prixAchat);
-        }
-      } else {
-        // Multi : une row par BDC avec fournisseur + prix
-        const rows = document.querySelectorAll("#prixParBdcList [data-bdc-i]");
-        rows.forEach((row) => {
-          const i = row.getAttribute("data-bdc-i");
-          const fourn = row.querySelector("select").value.trim();
-          const prix = row.querySelector("input").value.trim();
-          if (fourn) fd.append(`bdc_${i}_fournisseur`, fourn);
-          if (prix) fd.append(`bdc_${i}_prix`, prix);
-        });
-      }
+      // Matrice prix par BDC (1 row par BDC déposé)
+      const rows = document.querySelectorAll("#prixParBdcList [data-bdc-i]");
+      rows.forEach((row) => {
+        const i = row.getAttribute("data-bdc-i");
+        const fourn = row.querySelector("select").value.trim();
+        const prix = row.querySelector("input").value.trim();
+        if (fourn) fd.append(`bdc_${i}_fournisseur`, fourn);
+        if (prix) fd.append(`bdc_${i}_prix`, prix);
+      });
 
       // Envoi
       submitBtn.disabled = true;
       showStatus("loading", "Envoi en cours… Le rapport arrivera par email dans 30 à 60 secondes.");
 
       try {
-        const url = WEBHOOK_URLS[currentMode];
-        const resp = await fetch(url, { method: "POST", body: fd });
+        const resp = await fetch(WEBHOOK_URL, { method: "POST", body: fd });
         if (!resp.ok) {
           const txt = await resp.text();
           throw new Error("HTTP " + resp.status + " : " + txt.slice(0, 300));
@@ -913,7 +731,7 @@
     }
 
     // Init
-    applyMode();
+    renderPrixParBdc();
   </script>
 </body>
 </html>
