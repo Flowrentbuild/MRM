@@ -426,18 +426,33 @@
         </div>
       </div>
 
-      <!-- 3. Commande MRM ou ARC fournisseur -->
+      <!-- 3a. Bon de commande envoyé (commande MRM → fournisseur) -->
       <div class="field">
-        <label id="bdcLabel">Commande MRM ou ARC fournisseur<span class="req">*</span></label>
-        <p class="help" id="bdcHelp">Dépose soit la commande envoyée par MRM au fournisseur, soit l'accusé de réception (ARC) renvoyé par le fournisseur. C'est la pièce qui sera contrôlée avant signature.</p>
+        <label id="bdcLabel">Bon de commande envoyé au fournisseur<span class="req">*</span></label>
+        <p class="help" id="bdcHelp">Dépose la (ou les) commande(s) envoyée(s) par MRM au fournisseur. C'est la pièce qui doit être contrôlée avant signature.</p>
         <div class="dropzone" data-target="bdcInput">
           <div class="dz-icon">📑</div>
           <div class="dz-text">
-            <strong id="bdcDz">Glisse la commande MRM ou l'ARC ici</strong><br>
+            <strong id="bdcDz">Glisse la commande MRM ici</strong><br>
             ou clique pour choisir un fichier
           </div>
           <input type="file" id="bdcInput" name="bdc" accept=".pdf,.png,.jpg,.jpeg,.webp" />
           <div class="file-list" id="bdcList"></div>
+        </div>
+      </div>
+
+      <!-- 3b. Accusé de réception (ARC) — optionnel mais recommandé -->
+      <div class="field">
+        <label id="arcLabel">Accusé de réception fournisseur (ARC) <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — recommandé pour calcul du gain réel)</span></label>
+        <p class="help" id="arcHelp">Dépose l'ARC renvoyé par le fournisseur. Le bot extrait le montant HT validé pour calculer le gain réel par fournisseur (vs prix d'achat estimé).</p>
+        <div class="dropzone" data-target="arcInput">
+          <div class="dz-icon">✅</div>
+          <div class="dz-text">
+            <strong id="arcDz">Glisse l'ARC fournisseur ici</strong><br>
+            ou clique pour choisir un fichier
+          </div>
+          <input type="file" id="arcInput" name="arc" accept=".pdf,.png,.jpg,.jpeg,.webp" />
+          <div class="file-list" id="arcList"></div>
         </div>
       </div>
 
@@ -564,7 +579,8 @@
     let currentMode = "single";    // "single" ou "multi"
     const filesState = {
       releve: null,                 // un seul fichier
-      bdc: [],                      // un ou plusieurs (selon mode)
+      bdc: [],                      // BDC commandes envoyées par MRM (un ou plusieurs selon mode)
+      arc: [],                      // V3.8 : ARC reçus du fournisseur (0, 1 ou plusieurs selon mode)
       devis: null
     };
 
@@ -589,14 +605,22 @@
       const bdcLabel = document.getElementById("bdcLabel");
       const bdcHelp  = document.getElementById("bdcHelp");
       const bdcDz    = document.getElementById("bdcDz");
+      const arcInput = document.getElementById("arcInput");
+      const arcLabel = document.getElementById("arcLabel");
+      const arcHelp  = document.getElementById("arcHelp");
+      const arcDz    = document.getElementById("arcDz");
       const fField   = document.getElementById("fournisseurField");
       const fSelect  = document.getElementById("fournisseur");
 
       if (currentMode === "multi") {
         bdcInput.multiple = true;
-        bdcLabel.innerHTML = 'Commandes MRM ou ARC fournisseurs (1 ou plusieurs)<span class="req">*</span>';
-        bdcHelp.textContent = "Sélectionne toutes les commandes / ARC du chantier (Ctrl/Cmd + clic pour plusieurs). Le bot identifie chaque fournisseur.";
-        bdcDz.textContent = "Glisse les commandes / ARC ici";
+        bdcLabel.innerHTML = 'Bons de commande envoyés aux fournisseurs (1 ou plusieurs)<span class="req">*</span>';
+        bdcHelp.textContent = "Sélectionne toutes les commandes envoyées aux fournisseurs (Ctrl/Cmd + clic pour plusieurs).";
+        bdcDz.textContent = "Glisse les commandes MRM ici";
+        arcInput.multiple = true;
+        arcLabel.innerHTML = 'Accusés de réception fournisseurs (ARC) <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — recommandé pour calcul du gain réel)</span>';
+        arcHelp.textContent = "Sélectionne tous les ARC reçus des fournisseurs. Le bot extrait le montant HT validé pour calculer le gain réel par fournisseur.";
+        arcDz.textContent = "Glisse les ARC fournisseurs ici";
         fField.style.display = "none";
         fSelect.required = false;
         // Mode multi : matrice prix par BDC visible, single field caché
@@ -604,19 +628,26 @@
         document.getElementById("prixParBdcField").style.display = "block";
       } else {
         bdcInput.multiple = false;
-        bdcLabel.innerHTML = 'Commande MRM ou ARC fournisseur<span class="req">*</span>';
-        bdcHelp.textContent = "Dépose soit la commande envoyée par MRM au fournisseur, soit l'accusé de réception (ARC) renvoyé par le fournisseur. C'est la pièce qui sera contrôlée avant signature.";
-        bdcDz.textContent = "Glisse la commande MRM ou l'ARC ici";
+        bdcLabel.innerHTML = 'Bon de commande envoyé au fournisseur<span class="req">*</span>';
+        bdcHelp.textContent = "Dépose la commande envoyée par MRM au fournisseur. C'est la pièce qui doit être contrôlée avant signature.";
+        bdcDz.textContent = "Glisse la commande MRM ici";
+        arcInput.multiple = false;
+        arcLabel.innerHTML = 'Accusé de réception fournisseur (ARC) <span style="font-weight:400;color:var(--mrm-text-soft);">(optionnel — recommandé pour calcul du gain réel)</span>';
+        arcHelp.textContent = "Dépose l'ARC renvoyé par le fournisseur. Le bot extrait le montant HT validé pour calculer le gain réel par fournisseur (vs prix d'achat estimé).";
+        arcDz.textContent = "Glisse l'ARC fournisseur ici";
         fField.style.display = "block";
         fSelect.required = true;
         // Mode single : champ prix unique visible, matrice cachée
         document.getElementById("prixAchatSingleField").style.display = "block";
         document.getElementById("prixParBdcField").style.display = "none";
       }
-      // Reset bdc state to avoid carry-over of multiple files when switching to single
+      // Reset bdc/arc state to avoid carry-over of multiple files when switching to single
       filesState.bdc = [];
+      filesState.arc = [];
       bdcInput.value = "";
+      arcInput.value = "";
       renderFileList("bdc");
+      renderFileList("arc");
       renderPrixParBdc();
     }
 
@@ -719,6 +750,13 @@
           filesState.bdc = files;
         }
         renderFileList("bdc");
+      } else if (inputId === "arcInput") {
+        if (currentMode === "single") {
+          filesState.arc = files.length ? [files[0]] : [];
+        } else {
+          filesState.arc = files;
+        }
+        renderFileList("arc");
       } else if (inputId === "devisInput") {
         filesState.devis = files[0] || null;
         renderFileList("devis");
@@ -729,7 +767,9 @@
       const listElId = key + "List";
       const dzEl = document.querySelector(`.dropzone[data-target="${key}Input"]`);
       const listEl = document.getElementById(listElId);
-      const value = key === "bdc" ? filesState.bdc : (filesState[key] ? [filesState[key]] : []);
+      // bdc et arc sont des tableaux, releve et devis sont des fichiers simples
+      const isMultiKey = (key === "bdc" || key === "arc");
+      const value = isMultiKey ? filesState[key] : (filesState[key] ? [filesState[key]] : []);
       listEl.innerHTML = "";
       if (!value.length) {
         dzEl.classList.remove("has-files");
@@ -748,7 +788,8 @@
           e.stopPropagation();
           const k = b.dataset.key;
           const i = parseInt(b.dataset.i, 10);
-          if (k === "bdc") filesState.bdc.splice(i, 1);
+          const isMultiK = (k === "bdc" || k === "arc");
+          if (isMultiK) filesState[k].splice(i, 1);
           else filesState[k] = null;
           // Reset native input value to allow re-selecting same file later
           const input = document.getElementById(k + "Input");
@@ -814,12 +855,18 @@
       if (currentMode === "single") {
         fd.append("Relevé de mesures du métreur ou architecte", filesState.releve, filesState.releve.name);
         fd.append("Bon de commande fournisseur (à contrôler)", filesState.bdc[0], filesState.bdc[0].name);
+        if (filesState.arc.length) {
+          fd.append("Accusé de réception fournisseur (ARC)", filesState.arc[0], filesState.arc[0].name);
+        }
         if (filesState.devis) fd.append("Devis commercial signé par le client (optionnel)", filesState.devis, filesState.devis.name);
         fd.append("Fournisseur", supplier);
       } else {
         fd.append("Relevé de mesures du métreur ou architecte", filesState.releve, filesState.releve.name);
         filesState.bdc.forEach(f => {
           fd.append("Bons de commande fournisseurs (1 ou plusieurs PDF)", f, f.name);
+        });
+        filesState.arc.forEach(f => {
+          fd.append("Accusés de réception fournisseurs (ARC, 1 ou plusieurs PDF)", f, f.name);
         });
         if (filesState.devis) fd.append("Devis commercial signé par le client (optionnel)", filesState.devis, filesState.devis.name);
       }
@@ -877,8 +924,9 @@
         form.reset();
         filesState.releve = null;
         filesState.bdc = [];
+        filesState.arc = [];
         filesState.devis = null;
-        ["releve", "bdc", "devis"].forEach(renderFileList);
+        ["releve", "bdc", "arc", "devis"].forEach(renderFileList);
       } catch (err) {
         showStatus("error", "Erreur d'envoi : " + (err.message || err));
       } finally {
