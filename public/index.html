@@ -531,18 +531,6 @@
         <input type="email" id="email" name="email" placeholder="mickael@mrm31.fr" required />
       </div>
 
-      <!-- Référence chantier -->
-      <div class="field">
-        <label>Référence client / chantier (optionnel)</label>
-        <input type="text" id="reference" name="reference" placeholder="Ex : DUPONT Jean — chantier rénovation" />
-      </div>
-
-      <!-- Commentaire -->
-      <div class="field">
-        <label>Commentaire libre (optionnel)</label>
-        <textarea id="commentaire" name="commentaire" placeholder="Note pour mémoire ou pour préciser un contexte particulier"></textarea>
-      </div>
-
       <button type="submit" class="submit-btn" id="submitBtn">
         Lancer le contrôle
       </button>
@@ -842,8 +830,6 @@
       //    Les noms ASCII passent dans $json et sont récupérés par getField() côté workflow).
       const fd = new FormData();
       const supplier = currentMode === "single" ? document.getElementById("fournisseur").value : "";
-      const ref = document.getElementById("reference").value.trim();
-      const com = document.getElementById("commentaire").value.trim();
 
       if (currentMode === "single") {
         fd.append("Relevé de mesures du métreur ou architecte", filesState.releve, filesState.releve.name);
@@ -864,14 +850,10 @@
         if (filesState.devis) fd.append("Devis commercial signé par le client (optionnel)", filesState.devis, filesState.devis.name);
       }
       fd.append("Email destinataire du rapport", email);
-      if (ref) fd.append("Référence client / chantier (optionnel)", ref);
-      if (com) fd.append("Commentaire libre (optionnel)", com);
 
       // Fallback ASCII pure (passent toujours côté n8n même si le form trigger filtre les labels)
       fd.append("email", email);
       if (supplier) fd.append("fournisseur", supplier);
-      if (ref) fd.append("reference", ref);
-      if (com) fd.append("commentaire", com);
 
       if (currentMode === "single") {
         // Single : un seul prix d'achat
